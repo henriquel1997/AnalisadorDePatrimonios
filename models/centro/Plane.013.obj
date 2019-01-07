@@ -1,0 +1,12 @@
+# Blender v2.79 (sub 0) OBJ File: 'centro.blend'
+# www.blender.org
+mtllib Plane.013.mtl
+o Plane.013_Plane.017
+v -0.010000 0.000000 0.010000
+v 0.010000 0.000000 0.010000
+v -0.010000 -0.000000 -0.010000
+v 0.010000 -0.000000 -0.010000
+usemtl None
+s 1
+f 2 3 1
+f 2 4 3
