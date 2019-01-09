@@ -2,7 +2,7 @@
 // Created by Henrique on 08/01/2019.
 //
 
-#import "structs.cpp"
+#include "structs.cpp"
 #include <vector>
 #include <cstdlib>
 
