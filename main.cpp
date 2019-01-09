@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <cstdio>
 #include <cstdlib>
+#include "structs.cpp"
 
 int screenWidth = 1600;
 int screenHeight = 900;
@@ -14,7 +15,7 @@ Camera camera = { 0 };
 Vector3 defaultTarget = {0.f, 0.f, 0.f};
 Vector3 oldMouseDirection;
 float mouseSpeedMultiplier = 5.f;
-std::vector<Model> modelos;
+std::vector<Patrimonio> patrimonios;
 std::vector<char*> nomeModelos;
 const Vector3 centro = {0.f, 0.f, 0.f};
 const Vector3 up = { 0.0f, 1.0f, 0.0f };
@@ -127,8 +128,8 @@ int main() {
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    for(auto &modelo : modelos) {
-        UnloadModel(modelo);
+    for(auto &patrimonio : patrimonios) {
+        UnloadModel(patrimonio.model);
     }
 
     UnloadModel(chaoModel);
@@ -186,7 +187,7 @@ void desenharRaios(){
 }
 
 void desenharModelos(){
-    for (int i = 0; i < modelos.size(); i++){
+    for (int i = 0; i < patrimonios.size(); i++){
         Color cor;
         if(patrimonioIndex == i){
             cor = RED;
@@ -194,8 +195,8 @@ void desenharModelos(){
             cor = BLACK;
         }
 
-        DrawModel(modelos[i], centro, 1.f, GRAY);
-        DrawModelWires(modelos[i], centro, 1.f, cor);
+        DrawModel(patrimonios[i].model, centro, 1.f, GRAY);
+        DrawModelWires(patrimonios[i].model, centro, 1.f, cor);
     }
 }
 
@@ -212,7 +213,7 @@ void algoritmoVisibilidade(){
         float metadeGrid = tamanhoGrid/2;
         float metadeQuadrado = tamanhoQuadrado/2;
         int numeroQuadradosTotal = numeroQuadrados*numeroQuadrados;
-        Model patrimonio = modelos[patrimonioIndex];
+        Patrimonio patrimonio = patrimonios[patrimonioIndex];
 
         if(passoAlgoritmo == 0){
             pontosVisiveisChao.clear();
@@ -255,7 +256,7 @@ void algoritmoVisibilidade(){
 
                     //TODO: Otimizar velocidade
                     bool acertou = false;
-                    if(GetCollisionRayModel(raio, &patrimonio).hit && getModelHitIndex(raio) == patrimonioIndex){
+                    if(GetCollisionRayModel(raio, &patrimonio.model).hit && getModelHitIndex(raio) == patrimonioIndex){
                         cont++;
                         acertou = true;
                     }
@@ -315,70 +316,70 @@ void algoritmoVisibilidade(){
 }
 
 void getInput(){
-        Vector3 direction = Vector3Zero();
+    Vector3 direction = Vector3Zero();
 
-        //Move para frente
-        if(IsKeyPressed(KEY_W)){
-            Vector3 targetNormalized = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-            direction = Vector3Add(targetNormalized, direction);
-        }
+    //Move para frente
+    if(IsKeyPressed(KEY_W)){
+        Vector3 targetNormalized = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+        direction = Vector3Add(targetNormalized, direction);
+    }
 
-        //Move para trás
-        if(IsKeyPressed(KEY_S)){
-            Vector3 targetNormalized = Vector3Normalize(Vector3Subtract(camera.position, camera.target));
-            direction = Vector3Add(targetNormalized, direction);
-        }
+    //Move para trás
+    if(IsKeyPressed(KEY_S)){
+        Vector3 targetNormalized = Vector3Normalize(Vector3Subtract(camera.position, camera.target));
+        direction = Vector3Add(targetNormalized, direction);
+    }
 
-        //Move para a direita
-        if(IsKeyPressed(KEY_D)){
-            Vector3 targetVector = Vector3Subtract(camera.target, camera.position);
-            Vector3 targetNormalized = Vector3Normalize(Vector3CrossProduct(targetVector, camera.up));
-            direction = Vector3Add(targetNormalized, direction);
-            camera.target = Vector3Add(targetNormalized, camera.target);
-        }
+    //Move para a direita
+    if(IsKeyPressed(KEY_D)){
+        Vector3 targetVector = Vector3Subtract(camera.target, camera.position);
+        Vector3 targetNormalized = Vector3Normalize(Vector3CrossProduct(targetVector, camera.up));
+        direction = Vector3Add(targetNormalized, direction);
+        camera.target = Vector3Add(targetNormalized, camera.target);
+    }
 
-        //Move para a esquerda
-        if(IsKeyPressed(KEY_A)){
-            Vector3 targetVector = Vector3Subtract(camera.target, camera.position);
-            Vector3 targetNormalized = Vector3Normalize(Vector3CrossProduct(camera.up, targetVector));
-            direction = Vector3Add(targetNormalized, direction);
-            camera.target = Vector3Add(targetNormalized, camera.target);
-        }
+    //Move para a esquerda
+    if(IsKeyPressed(KEY_A)){
+        Vector3 targetVector = Vector3Subtract(camera.target, camera.position);
+        Vector3 targetNormalized = Vector3Normalize(Vector3CrossProduct(camera.up, targetVector));
+        direction = Vector3Add(targetNormalized, direction);
+        camera.target = Vector3Add(targetNormalized, camera.target);
+    }
 
-        //Move para cima
-        if(IsKeyPressed(KEY_Z) || IsKeyPressed(KEY_SPACE)){
-            direction = Vector3Add(up, direction);
-            camera.target = Vector3Add(up, camera.target);
-        }
+    //Move para cima
+    if(IsKeyPressed(KEY_Z) || IsKeyPressed(KEY_SPACE)){
+        direction = Vector3Add(up, direction);
+        camera.target = Vector3Add(up, camera.target);
+    }
 
-        //Move para baixo
-        if(IsKeyPressed(KEY_X)){
-            Vector3 down = Vector3Negate(up);
-            direction = Vector3Add(down, direction);
-            camera.target = Vector3Add(down, camera.target);
-        }
+    //Move para baixo
+    if(IsKeyPressed(KEY_X)){
+        Vector3 down = Vector3Negate(up);
+        direction = Vector3Add(down, direction);
+        camera.target = Vector3Add(down, camera.target);
+    }
 
 
     camera.position = Vector3Add(direction, camera.position);
 
-        //Controla a direção (target) pelo mouse quando o shift esquerdo estiver pressionado
-        bool shiftPressed = IsKeyPressed(KEY_LEFT_SHIFT);
-        if(IsKeyDown(KEY_LEFT_SHIFT) || shiftPressed){
+    //Controla a direção (target) pelo mouse quando o shift esquerdo estiver pressionado
+    bool shiftPressed = IsKeyPressed(KEY_LEFT_SHIFT);
+    if(IsKeyDown(KEY_LEFT_SHIFT) || shiftPressed){
 
-            if(shiftPressed){
-                SetMousePosition((Vector2){screenWidth*.5f, screenHeight*.5f});
-            }
+        if(shiftPressed){
+            SetMousePosition((Vector2){screenWidth*.5f, screenHeight*.5f});
+        }
 
-            Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
+        Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
 
-            if(shiftPressed){
-                oldMouseDirection = mouseRay.direction;
-            }
-
-            Vector3 mouseVector = Vector3Multiply(Vector3Subtract(mouseRay.direction, oldMouseDirection), mouseSpeedMultiplier);
-            camera.target = Vector3Add(camera.target, mouseVector);
+        if(shiftPressed){
             oldMouseDirection = mouseRay.direction;
         }
+
+        Vector3 mouseVector = Vector3Multiply(Vector3Subtract(mouseRay.direction, oldMouseDirection), mouseSpeedMultiplier);
+        camera.target = Vector3Add(camera.target, mouseVector);
+        oldMouseDirection = mouseRay.direction;
+    }
 
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
         Ray ray = GetMouseRay(GetMousePosition(), camera);
@@ -386,7 +387,7 @@ void getInput(){
         if(index >= 0){
             printf("Nome do arquivo do modelo: %s\n", nomeModelos.at(index));
             printf("Index: %i\n", index);
-            Model model = modelos.at(index);
+            Model model = patrimonios.at(index).model;
             patrimonioIndex = index;
             float* vertices = model.mesh.vertices;
             pontosPatrimonio.clear();
@@ -436,8 +437,8 @@ void getInput(){
 int getModelHitIndex(Ray ray){
     float lowestDistance = -1.f;
     int modelHitIndex = -1;
-    for(int i = 0; i < modelos.size(); i++){
-        Model modelo = modelos.at(i);
+    for(int i = 0; i < patrimonios.size(); i++){
+        Model modelo = patrimonios.at(i).model;
         RayHitInfo hitInfo = GetCollisionRayModel(ray, &modelo);
         if(hitInfo.hit && (hitInfo.distance < lowestDistance || lowestDistance < 0)){
             lowestDistance = hitInfo.distance;
@@ -450,8 +451,8 @@ int getModelHitIndex(Ray ray){
 RayHitInfo getModelHitInfo(Ray ray){
     float lowestDistance = -1.f;
     RayHitInfo closestHitInfo = {};
-    for (auto modelo : modelos) {
-        RayHitInfo hitInfo = GetCollisionRayModel(ray, &modelo);
+    for (auto patrimonio : patrimonios) {
+        RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
         if(hitInfo.hit && (hitInfo.distance < lowestDistance || lowestDistance < 0)){
             lowestDistance = hitInfo.distance;
             closestHitInfo = hitInfo;
@@ -530,7 +531,9 @@ void carregarModelos(char* path) {
                 //É um arquivo .obj
                 auto fullPath = concat(path, nome);
                 Model model = LoadModel(fullPath);
-                modelos.push_back(model);
+                BoundingBox bBox = MeshBoundingBox(model.mesh);
+                Patrimonio patrimonio = {model, bBox};
+                patrimonios.push_back(patrimonio);
                 nomeModelos.push_back(copy(nome));
                 free(fullPath);
             }
