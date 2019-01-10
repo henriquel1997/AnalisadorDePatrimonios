@@ -134,6 +134,7 @@ int main() {
     // De-Initialization
     //--------------------------------------------------------------------------------------
     UnloadOctree(octree);
+    printf("Octree desalocada\n");
 
     for(auto &patrimonio : patrimonios) {
         UnloadModel(patrimonio.model);
@@ -155,6 +156,7 @@ int main() {
 void inicializarOctree(){
     if(octree != nullptr){
         UnloadOctree(octree);
+        printf("Octree desalocada\n");
     }
 
     float metade = tamanhoGrid/2;

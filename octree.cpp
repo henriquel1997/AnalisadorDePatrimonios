@@ -7,21 +7,17 @@
 float min_octree_size = 0.1f;
 
 //Libera a memória da octree e de seus filhos
-//TODO: Testar se está desalocando corretamente
 void UnloadOctree(Octree* octree) {
     if (octree == nullptr) {
         return;
     }
 
-    if (octree->pai != nullptr) {
-        free(octree->pai);
-    }
-
     free(octree->patrimonios);
 
     for (auto &child : octree->filhos) {
-        UnloadOctree(child);
-        free(child);
+        if(child != nullptr){
+            UnloadOctree(child);
+        }
     }
 
     free(octree);
