@@ -4,6 +4,7 @@
 #include "raylib.h"
 
 struct Patrimonio{
+    int id;
     Model model;
     BoundingBox bBox;
 };

@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include <cstdio>
 #include <cstdlib>
-#include "structs.cpp"
+#include "octree.h"
 
 int screenWidth = 1600;
 int screenHeight = 900;
@@ -43,7 +43,10 @@ time_t tempoInicio;
 Texture2D texturaChao = {};
 Model chaoModel = {};
 
+Octree* octree = nullptr;
+
 void getInput();
+void inicializarOctree();
 void carregarModelos(char* path);
 void carregarChao();
 int getModelHitIndex(Ray ray);
@@ -75,6 +78,8 @@ int main() {
 
     carregarModelos((char *)R"(C:\Dev\raycast\models\centro\)");
     carregarChao();
+
+    inicializarOctree();
 
     //--------------------------------------------------------------------------------------
 
@@ -128,6 +133,8 @@ int main() {
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
+    UnloadOctree(octree);
+
     for(auto &patrimonio : patrimonios) {
         UnloadModel(patrimonio.model);
     }
@@ -143,6 +150,23 @@ int main() {
     //--------------------------------------------------------------------------------------
 
     return 0;
+}
+
+void inicializarOctree(){
+    if(octree != nullptr){
+        UnloadOctree(octree);
+    }
+
+    float metade = tamanhoGrid/2;
+    Vector3 min = (Vector3){-metade, -metade, -metade};
+    Vector3 max = (Vector3){metade, metade, metade};
+
+    definirTamanhoMinimoOctree(tamanhoGrid/numeroQuadrados);
+
+    printf("Comecando a construir a Octree\n");
+    time_t tempoInicio = time(nullptr);
+    octree = BuildOctree((BoundingBox){min, max}, patrimonios);
+    printf("Tempo para gerar a Octree: %f(s)\n", difftime(time(nullptr), tempoInicio));
 }
 
 void carregarChao(){
@@ -525,6 +549,7 @@ void carregarModelos(char* path) {
     if (dir != nullptr) {
         // Lista todos os arquivos do diretório
 
+        int id = 0;
         while ((ent = readdir(dir)) != nullptr) {
             char* nome = ent->d_name;
             if(hasEndingString(nome, (char*)".obj")){
@@ -532,7 +557,8 @@ void carregarModelos(char* path) {
                 auto fullPath = concat(path, nome);
                 Model model = LoadModel(fullPath);
                 BoundingBox bBox = MeshBoundingBox(model.mesh);
-                Patrimonio patrimonio = {model, bBox};
+                Patrimonio patrimonio = {id, model, bBox};
+                id++;
                 patrimonios.push_back(patrimonio);
                 nomeModelos.push_back(copy(nome));
                 free(fullPath);
