@@ -7,16 +7,24 @@
 float min_octree_size = 0.1f;
 
 //Libera a memória da octree e de seus filhos
-void UnloadOctree(Octree* octree){
-    if(octree == nullptr){
+//TODO: Testar se está desalocando corretamente
+void UnloadOctree(Octree* octree) {
+    if (octree == nullptr) {
         return;
     }
 
-    free(octree->pai);
+    if (octree->pai != nullptr) {
+        free(octree->pai);
+    }
+
+    free(octree->patrimonios);
+
     for (auto &child : octree->filhos) {
         UnloadOctree(child);
         free(child);
     }
+
+    free(octree);
 }
 
 void definirTamanhoMinimoOctree(float novo_min){
@@ -36,20 +44,23 @@ Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
 
     Vector3 dimensoes = Vector3Subtract(regiao.max, regiao.min);
 
-    bool dimensaoMenor = dimensoes.x <= min_octree_size || dimensoes.y <= min_octree_size || dimensoes.z <= min_octree_size;
-
-    if(patrimonios.empty() || dimensaoMenor){
-        return nullptr;
-    }
+//    bool dimensaoMenor = dimensoes.x <= min_octree_size || dimensoes.y <= min_octree_size || dimensoes.z <= min_octree_size;
+//
+//    if(patrimonios.empty() || dimensaoMenor){
+//        return nullptr;
+//    }
 
     auto *octree = (Octree*)malloc(sizeof(Octree));
     octree->pai = nullptr;
     octree->regiao = regiao;
 
     if(patrimonios.size() == 1){
-        for (auto &filho : octree->filhos) {
-            filho = nullptr;
+        for (int i = 0; i < 8; i++) {
+            octree->filhos[i] = nullptr;
+            octree->filhosAtivos[i] = false;
         }
+        octree->numeroPatrimonios = 1;
+        octree->patrimonios = &patrimonios[0];
         return octree;
     }
 
@@ -90,18 +101,25 @@ Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
         }
     }
 
-    octree->patrimonios = patrimonios;
+    octree->numeroPatrimonios = patrimonios.size();
+    octree->patrimonios = (Patrimonio*)malloc(sizeof(Patrimonio)*patrimonios.size());
+    for(int i = 0; i < patrimonios.size(); i++){
+        octree->patrimonios[i] = patrimonios[i];
+    }
 
     for(int i = 0; i < 8; i++){
         if(!octList[i].empty()){
             Octree* filho = BuildOctree(octantes[i], octList[i]);
             if(filho != nullptr){
                 filho->pai = octree;
-                octree->filhosAtivos |= (char)(1 << i);
+                octree->filhosAtivos[i] = true;
+            }else{
+                octree->filhosAtivos[i] = false;
             }
             octree->filhos[i] = filho;
         }else{
             octree->filhos[i] = nullptr;
+            octree->filhosAtivos[i] = false;
         }
     }
 

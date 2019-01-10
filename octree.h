@@ -10,9 +10,11 @@
 struct Octree{
     Octree* pai;
     Octree* filhos[8];
-    unsigned char filhosAtivos;
+    //unsigned char filhosAtivos;
+    bool filhosAtivos[8];
     BoundingBox regiao;
-    std::vector<Patrimonio> patrimonios;
+    int numeroPatrimonios;
+    Patrimonio* patrimonios;
 };
 
 void UnloadOctree(Octree* octree);
