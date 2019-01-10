@@ -282,7 +282,7 @@ void algoritmoVisibilidade(){
 
                     //TODO: Otimizar velocidade
                     bool acertou = false;
-                    if(GetCollisionRayModel(raio, &patrimonio.model).hit && getModelHitIndex(raio) == patrimonioIndex){
+                    if(CheckCollisionRayBox(raio, patrimonio.bBox) && GetCollisionRayModel(raio, &patrimonio.model).hit && getModelHitIndex(raio) == patrimonioIndex){
                         cont++;
                         acertou = true;
                     }

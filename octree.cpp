@@ -121,3 +121,33 @@ Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
 
     return octree;
 }
+
+RayHitInfo GetCollisionRayOctree(Ray ray, Octree* octree){
+
+    RayHitInfo hitInfo = {};
+    hitInfo.distance = 3.40282347E+38f;
+    hitInfo.hit = false;
+
+    if(CheckCollisionRayBox(ray, octree->regiao)){
+        for(int i = 0; i < octree->numeroPatrimonios; i++){
+            Patrimonio patrimonio = octree->patrimonios[i];
+            if(CheckCollisionRayBox(ray, patrimonio.bBox)){
+                RayHitInfo newHitInfo = GetCollisionRayModel(ray, &patrimonio.model);
+                if(newHitInfo.distance < hitInfo.distance){
+                    hitInfo = newHitInfo;
+                }
+            }
+        }
+
+        for(int i = 0; i < 8; i++){
+            if(octree->filhosAtivos[i]){
+                RayHitInfo newHitInfo = GetCollisionRayOctree(ray, octree->filhos[i]);
+                if(newHitInfo.distance < hitInfo.distance){
+                    hitInfo = newHitInfo;
+                }
+            }
+        }
+    }
+
+    return hitInfo;
+}
