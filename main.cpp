@@ -450,7 +450,7 @@ void getInput(){
         mostrarRaios = !mostrarRaios;
     }
 
-    if(IsKeyPressed(KEY_A)){
+    if(IsKeyPressed(KEY_N)){
         animado = !animado;
     }
 }
