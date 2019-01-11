@@ -74,7 +74,7 @@ int main() {
     camera.fovy = 45.0f;                                // Camera field-of-view Y
     camera.type = CAMERA_PERSPECTIVE;                   // Camera mode type
 
-    carregarModelos((char *)R"(C:\Dev\raycast\models\centro\)");
+    carregarModelos((char *)R"(..\models\centro\)");
     carregarChao();
 
     inicializarOctree();
