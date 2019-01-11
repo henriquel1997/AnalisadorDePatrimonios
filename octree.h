@@ -18,7 +18,7 @@ struct Octree{
 };
 
 void UnloadOctree(Octree* octree);
-void definirTamanhoMinimoOctree(float novo_min);
 bool boxContainsBox(BoundingBox fora, BoundingBox dentro);
 Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios);
-RayHitInfo GetCollisionRayOctree(Ray ray, Octree* octree);
+bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, Octree *octree);
+bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonioDistance, Ray ray, Octree *octree);

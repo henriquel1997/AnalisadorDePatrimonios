@@ -26,7 +26,6 @@ std::vector<Vector3> pontosPatrimonio;
 std::vector<Vector3> raios;
 std::vector<bool> raioAcertou;
 std::vector<Vector2> pontosVisiveisChao;
-std::vector<float> porcentagensPontoChao;
 int patrimonioIndex = -1;
 bool executaAlgoritmo = false;
 bool avancarAlgoritmo = false; //Passo a passo
@@ -163,8 +162,6 @@ void inicializarOctree(){
     Vector3 min = (Vector3){-metade, -metade, -metade};
     Vector3 max = (Vector3){metade, metade, metade};
 
-    definirTamanhoMinimoOctree(tamanhoGrid/numeroQuadrados);
-
     printf("Comecando a construir a Octree\n");
     time_t tempoInicio = time(nullptr);
     octree = BuildOctree((BoundingBox){min, max}, patrimonios);
@@ -181,7 +178,7 @@ void carregarChao(){
 
 void desenharChao(){
     int numPixels = numeroQuadrados * numeroQuadrados;
-    auto pixels = (Color *) malloc(sizeof(Color) * numPixels);
+    Color pixels[numPixels];
     for (int i = 0; i < numPixels; i++) {
         pixels[i] = (Color){};
     }
@@ -192,7 +189,6 @@ void desenharChao(){
     }
     Image chao = LoadImageEx(pixels, numeroQuadrados, numeroQuadrados);
     UpdateTexture(texturaChao, chao.data);
-    free(pixels);
     UnloadImage(chao);
     DrawModel(chaoModel, centro, 1.f, WHITE);
 }
@@ -207,7 +203,6 @@ void desenharRaios(){
             }else{
                 cor = ORANGE;
             }
-
         }
     }
 }
@@ -280,9 +275,9 @@ void algoritmoVisibilidade(){
                     raio.position = posPessoa;
                     raio.direction = Vector3Subtract(pontoRaio, posPessoa);
 
-                    //TODO: Otimizar velocidade
+
                     bool acertou = false;
-                    if(CheckCollisionRayBox(raio, patrimonio.bBox) && GetCollisionRayModel(raio, &patrimonio.model).hit && getModelHitIndex(raio) == patrimonioIndex){
+                    if(isPatrimonioTheClosestHit(patrimonio, raio, octree)){
                         cont++;
                         acertou = true;
                     }

@@ -4,8 +4,6 @@
 
 #include "octree.h"
 
-float min_octree_size = 0.1f;
-
 //Libera a memória da octree e de seus filhos
 void UnloadOctree(Octree* octree) {
     if (octree == nullptr) {
@@ -23,10 +21,6 @@ void UnloadOctree(Octree* octree) {
     free(octree);
 }
 
-void definirTamanhoMinimoOctree(float novo_min){
-    min_octree_size = novo_min;
-}
-
 bool boxContainsBox(BoundingBox fora, BoundingBox dentro){
     return  fora.min.x <= dentro.min.x &&
             fora.min.y <= dentro.min.y &&
@@ -40,12 +34,6 @@ Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
 
     Vector3 dimensoes = Vector3Subtract(regiao.max, regiao.min);
 
-//    bool dimensaoMenor = dimensoes.x <= min_octree_size || dimensoes.y <= min_octree_size || dimensoes.z <= min_octree_size;
-//
-//    if(patrimonios.empty() || dimensaoMenor){
-//        return nullptr;
-//    }
-
     auto *octree = (Octree*)malloc(sizeof(Octree));
     octree->pai = nullptr;
     octree->regiao = regiao;
@@ -56,7 +44,9 @@ Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
             octree->filhosAtivos[i] = false;
         }
         octree->numeroPatrimonios = 1;
-        octree->patrimonios = &patrimonios[0];
+        auto p = (Patrimonio*)malloc(sizeof(Patrimonio));
+        *p = patrimonios[0];
+        octree->patrimonios = p;
         return octree;
     }
 
@@ -80,7 +70,6 @@ Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
         for(int i = 0; i < 8; i++){
             if(boxContainsBox(octantes[i], patrimonio.bBox)){
                 octList[i].push_back(patrimonio);
-                //TODO: Testar se dá pra remover o patrimônio da lista direto aqui ao invés de fazer depois
                 delist.push_back(patrimonio);
                 break;
             }
@@ -122,32 +111,41 @@ Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
     return octree;
 }
 
-RayHitInfo GetCollisionRayOctree(Ray ray, Octree* octree){
+bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, Octree *octree){
 
-    RayHitInfo hitInfo = {};
-    hitInfo.distance = 3.40282347E+38f;
-    hitInfo.hit = false;
+    if(octree != nullptr && CheckCollisionRayBox(ray, patrimonio.bBox)){
+
+        RayHitInfo patrimonioHitInfo = GetCollisionRayModel(ray, &patrimonio.model);
+
+        if(patrimonioHitInfo.hit){
+            return !existeUmPatrimonioMaisProximoNaOctree(patrimonio.id, patrimonioHitInfo.distance, ray, octree);
+        }
+    }
+
+    return false;
+}
+
+bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonioDistance, Ray ray, Octree *octree){
 
     if(CheckCollisionRayBox(ray, octree->regiao)){
         for(int i = 0; i < octree->numeroPatrimonios; i++){
             Patrimonio patrimonio = octree->patrimonios[i];
-            if(CheckCollisionRayBox(ray, patrimonio.bBox)){
+            if(patrimonio.id != patrimonioIndex && CheckCollisionRayBox(ray, patrimonio.bBox)){
                 RayHitInfo newHitInfo = GetCollisionRayModel(ray, &patrimonio.model);
-                if(newHitInfo.distance < hitInfo.distance){
-                    hitInfo = newHitInfo;
+                if(newHitInfo.distance < patrimonioDistance){
+                    return true;
                 }
             }
         }
 
         for(int i = 0; i < 8; i++){
             if(octree->filhosAtivos[i]){
-                RayHitInfo newHitInfo = GetCollisionRayOctree(ray, octree->filhos[i]);
-                if(newHitInfo.distance < hitInfo.distance){
-                    hitInfo = newHitInfo;
+                if(existeUmPatrimonioMaisProximoNaOctree(patrimonioIndex, patrimonioDistance, ray, octree->filhos[i])){
+                    return true;
                 }
             }
         }
     }
 
-    return hitInfo;
+    return false;
 }
