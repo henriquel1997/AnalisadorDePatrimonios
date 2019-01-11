@@ -149,3 +149,33 @@ bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonio
 
     return false;
 }
+
+int indexPatrimonioMaisProximoNaOctree(Ray ray, Octree *octree){
+
+    int indexMaisProximo = -1;
+    float distanciaMaisProximo = 3.40282347E+38f;
+
+    return indexDistanceMaisProximoNaOctree((IndexDistance) {indexMaisProximo, distanciaMaisProximo}, ray, octree).index;
+}
+
+IndexDistance indexDistanceMaisProximoNaOctree(IndexDistance indexDistance, Ray ray, Octree *octree){
+    if(CheckCollisionRayBox(ray, octree->regiao)){
+        for(int i = 0; i < octree->numeroPatrimonios; i++){
+            Patrimonio patrimonio = octree->patrimonios[i];
+            if(patrimonio.id != indexDistance.index && CheckCollisionRayBox(ray, patrimonio.bBox)){
+                RayHitInfo newHitInfo = GetCollisionRayModel(ray, &patrimonio.model);
+                if(newHitInfo.distance < indexDistance.distance){
+                    indexDistance = {patrimonio.id, newHitInfo.distance};
+                }
+            }
+        }
+
+        for(int i = 0; i < 8; i++){
+            if(octree->filhosAtivos[i]){
+                indexDistance = indexDistanceMaisProximoNaOctree(indexDistance, ray, octree->filhos[i]);
+            }
+        }
+    }
+
+    return indexDistance;
+}

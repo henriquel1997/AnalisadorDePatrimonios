@@ -5,6 +5,7 @@
 
 struct Patrimonio{
     int id;
+    char* nome;
     Model model;
     BoundingBox bBox;
 };

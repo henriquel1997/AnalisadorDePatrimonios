@@ -16,7 +16,6 @@ Vector3 defaultTarget = {0.f, 0.f, 0.f};
 Vector3 oldMouseDirection;
 float mouseSpeedMultiplier = 5.f;
 std::vector<Patrimonio> patrimonios;
-std::vector<char*> nomeModelos;
 const Vector3 centro = {0.f, 0.f, 0.f};
 const Vector3 up = { 0.0f, 1.0f, 0.0f };
 
@@ -137,14 +136,11 @@ int main() {
 
     for(auto &patrimonio : patrimonios) {
         UnloadModel(patrimonio.model);
+        free(patrimonio.nome);
     }
 
     UnloadModel(chaoModel);
     UnloadTexture(texturaChao);
-
-    for(auto &nome : nomeModelos) {
-        free(nome);
-    }
 
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
@@ -404,15 +400,15 @@ void getInput(){
 
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
         Ray ray = GetMouseRay(GetMousePosition(), camera);
-        int index = getModelHitIndex(ray);
+        int index = indexPatrimonioMaisProximoNaOctree(ray, octree);
         if(index >= 0){
-            printf("Nome do arquivo do modelo: %s\n", nomeModelos.at(index));
+            Patrimonio patrimonio = patrimonios.at(index);
+            printf("Nome do arquivo do modelo: %s\n", patrimonio.nome);
             printf("Index: %i\n", index);
-            Model model = patrimonios.at(index).model;
             patrimonioIndex = index;
-            float* vertices = model.mesh.vertices;
+            float* vertices = patrimonio.model.mesh.vertices;
             pontosPatrimonio.clear();
-            for(int i = 0; i < model.mesh.vertexCount; i += 3){
+            for(int i = 0; i < patrimonio.model.mesh.vertexCount; i += 3){
                 float x = vertices[i];
                 float y = vertices[i+1];
                 float z = vertices[i+2];
@@ -467,19 +463,6 @@ int getModelHitIndex(Ray ray){
         }
     }
     return modelHitIndex;
-}
-
-RayHitInfo getModelHitInfo(Ray ray){
-    float lowestDistance = -1.f;
-    RayHitInfo closestHitInfo = {};
-    for (auto patrimonio : patrimonios) {
-        RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
-        if(hitInfo.hit && (hitInfo.distance < lowestDistance || lowestDistance < 0)){
-            lowestDistance = hitInfo.distance;
-            closestHitInfo = hitInfo;
-        }
-    }
-    return closestHitInfo;
 }
 
 void seguirPessoa(){
@@ -554,10 +537,9 @@ void carregarModelos(char* path) {
                 auto fullPath = concat(path, nome);
                 Model model = LoadModel(fullPath);
                 BoundingBox bBox = MeshBoundingBox(model.mesh);
-                Patrimonio patrimonio = {id, model, bBox};
+                Patrimonio patrimonio = {id, nome, model, bBox};
                 id++;
                 patrimonios.push_back(patrimonio);
-                nomeModelos.push_back(copy(nome));
                 free(fullPath);
             }
         }
