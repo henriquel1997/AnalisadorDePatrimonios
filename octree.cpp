@@ -180,20 +180,22 @@ IndexDistance indexDistanceMaisProximoNaOctree(IndexDistance indexDistance, Ray 
     return indexDistance;
 }
 
-void desenharOctree(Octree* octree, Color corFolha, Color corNaoFolha){
-    bool temFilhos = false;
-    for(int i = 0; i < 8; i++){
-        if(octree->filhosAtivos[i]){
-            temFilhos = true;
-            desenharOctree(octree->filhos[i], corFolha, corNaoFolha);
+void desenharOctree(Octree* octree, Color corFilhos, Color corSemFilhos){
+    if(octree != nullptr){
+        bool temFilhos = false;
+        for(int i = 0; i < 8; i++){
+            if(octree->filhosAtivos[i]){
+                temFilhos = true;
+                desenharOctree(octree->filhos[i], corFilhos, corSemFilhos);
+            }
         }
-    }
 
-    Color cor;
-    if(temFilhos){
-        cor = corNaoFolha;
-    }else{
-        cor = corFolha;
+        Color cor;
+        if(temFilhos){
+            cor = corFilhos;
+        }else{
+            cor = corSemFilhos;
+        }
+        DrawBoundingBox(octree->regiao, cor);
     }
-    DrawBoundingBox(octree->regiao, cor);
 }
