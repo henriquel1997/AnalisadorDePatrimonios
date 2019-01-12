@@ -179,3 +179,21 @@ IndexDistance indexDistanceMaisProximoNaOctree(IndexDistance indexDistance, Ray 
 
     return indexDistance;
 }
+
+void desenharOctree(Octree* octree, Color corFolha, Color corNaoFolha){
+    bool temFilhos = false;
+    for(int i = 0; i < 8; i++){
+        if(octree->filhosAtivos[i]){
+            temFilhos = true;
+            desenharOctree(octree->filhos[i], corFolha, corNaoFolha);
+        }
+    }
+
+    Color cor;
+    if(temFilhos){
+        cor = corNaoFolha;
+    }else{
+        cor = corFolha;
+    }
+    DrawBoundingBox(octree->regiao, cor);
+}

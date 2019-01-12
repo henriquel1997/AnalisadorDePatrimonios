@@ -29,3 +29,4 @@ bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, Octree *octree);
 bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonioDistance, Ray ray, Octree *octree);
 int indexPatrimonioMaisProximoNaOctree(Ray ray, Octree *octree);
 IndexDistance indexDistanceMaisProximoNaOctree(IndexDistance indexDistance, Ray ray, Octree *octree);
+void desenharOctree(Octree* octree, Color corFolha, Color corNaoFolha);

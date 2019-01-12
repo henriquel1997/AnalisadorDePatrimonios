@@ -42,6 +42,7 @@ Texture2D texturaChao = {};
 Model chaoModel = {};
 
 Octree* octree = nullptr;
+bool desenharArvore = false;
 
 void getInput();
 void inicializarOctree();
@@ -115,6 +116,10 @@ int main() {
 
             //Desenha na textura do chão para representar a visibilidade daquela posição
             desenharChao();
+
+            if(desenharArvore){
+                desenharOctree(octree, GREEN, RED);
+            }
 
             DrawGrid(numeroQuadrados, tamanhoGrid/numeroQuadrados);
 
@@ -448,6 +453,10 @@ void getInput(){
 
     if(IsKeyPressed(KEY_N)){
         animado = !animado;
+    }
+
+    if(IsKeyPressed(KEY_T)){
+        desenharArvore = !desenharArvore;
     }
 }
 
