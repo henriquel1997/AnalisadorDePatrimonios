@@ -5,7 +5,6 @@
 #include "structs.h"
 #include "raymath.h"
 #include <vector>
-#include <cstdlib>
 
 struct Octree{
     Octree* pai;

@@ -4,9 +4,7 @@
 #include "math.h"
 #include "raylib.h"
 #include "raymath.h"
-#include <pthread.h>
 #include <cstdio>
-#include <cstdlib>
 #include "octree.h"
 
 int screenWidth = 1600;
