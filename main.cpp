@@ -53,6 +53,7 @@ void inicializarArvore();
 void inicializarKDTree();
 void inicializarOctree();
 BoundingBox boundingBoxGrid();
+bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray);
 void carregarModelos(char* path);
 void carregarChao();
 int getModelHitIndex(Ray ray);
@@ -205,6 +206,15 @@ BoundingBox boundingBoxGrid(){
     return (BoundingBox){min, max};
 }
 
+bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray){
+    switch (tipoArvore){
+        case OCTREE:
+            return isPatrimonioTheClosestHit(patrimonio, ray, octree);
+        case KDTREE:
+            return isPatrimonioTheClosestHit(patrimonio, ray, kdtree);
+    }
+}
+
 void carregarChao(){
     Image imagemChao = GenImageColor(numeroQuadrados, numeroQuadrados, GRAY);
     texturaChao = LoadTextureFromImage(imagemChao);
@@ -314,7 +324,7 @@ void algoritmoVisibilidade(){
 
 
                     bool acertou = false;
-                    if(isPatrimonioTheClosestHit(patrimonio, raio, octree)){
+                    if(isPatrimonioTheClosestHit(patrimonio, raio)){
                         cont++;
                         acertou = true;
                     }
@@ -441,7 +451,7 @@ void getInput(){
 
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
         Ray ray = GetMouseRay(GetMousePosition(), camera);
-        int index = indexPatrimonioMaisProximoNaOctree(ray, octree);
+        int index = indexPatrimonioMaisProximo(ray, octree);
         if(index >= 0){
             Patrimonio patrimonio = patrimonios.at(index);
             printf("Nome do arquivo do modelo: %s\n", patrimonio.nome);

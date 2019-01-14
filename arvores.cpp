@@ -120,14 +120,14 @@ bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, Octree *octree){
         RayHitInfo patrimonioHitInfo = GetCollisionRayModel(ray, &patrimonio.model);
 
         if(patrimonioHitInfo.hit){
-            return !existeUmPatrimonioMaisProximoNaOctree(patrimonio.id, patrimonioHitInfo.distance, ray, octree);
+            return !existeUmPatrimonioMaisProximo(patrimonio.id, patrimonioHitInfo.distance, ray, octree);
         }
     }
 
     return false;
 }
 
-bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonioDistance, Ray ray, Octree *octree){
+bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, Octree *octree){
 
     if(CheckCollisionRayBox(ray, octree->regiao)){
         for(int i = 0; i < octree->numeroPatrimonios; i++){
@@ -142,7 +142,7 @@ bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonio
 
         for(int i = 0; i < 8; i++){
             if(octree->filhosAtivos[i]){
-                if(existeUmPatrimonioMaisProximoNaOctree(patrimonioIndex, patrimonioDistance, ray, octree->filhos[i])){
+                if(existeUmPatrimonioMaisProximo(patrimonioIndex, patrimonioDistance, ray, octree->filhos[i])){
                     return true;
                 }
             }
@@ -152,15 +152,15 @@ bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonio
     return false;
 }
 
-int indexPatrimonioMaisProximoNaOctree(Ray ray, Octree *octree){
+int indexPatrimonioMaisProximo(Ray ray, Octree *octree){
 
     int indexMaisProximo = -1;
     float distanciaMaisProximo = 3.40282347E+38f;
 
-    return indexDistanceMaisProximoNaOctree((IndexDistance) {indexMaisProximo, distanciaMaisProximo}, ray, octree).index;
+    return indexDistanceMaisProximo((IndexDistance) {indexMaisProximo, distanciaMaisProximo}, ray, octree).index;
 }
 
-IndexDistance indexDistanceMaisProximoNaOctree(IndexDistance indexDistance, Ray ray, Octree *octree){
+IndexDistance indexDistanceMaisProximo(IndexDistance indexDistance, Ray ray, Octree *octree){
     if(CheckCollisionRayBox(ray, octree->regiao)){
         for(int i = 0; i < octree->numeroPatrimonios; i++){
             Patrimonio patrimonio = octree->patrimonios[i];
@@ -174,7 +174,7 @@ IndexDistance indexDistanceMaisProximoNaOctree(IndexDistance indexDistance, Ray 
 
         for(int i = 0; i < 8; i++){
             if(octree->filhosAtivos[i]){
-                indexDistance = indexDistanceMaisProximoNaOctree(indexDistance, ray, octree->filhos[i]);
+                indexDistance = indexDistanceMaisProximo(indexDistance, ray, octree->filhos[i]);
             }
         }
     }
@@ -228,7 +228,7 @@ KDTree* BuildKDTree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
         Vector3 centros[nPatrimonios];
 
         //Calcula a média dos centros
-        for (int i =0; i < nPatrimonios; i++) {
+        for (int i = 0; i < nPatrimonios; i++) {
             BoundingBox bBox = patrimonios[i].bBox;
             centros[i] = Vector3Divide(Vector3Add(bBox.min, bBox.max), 2);
             media = Vector3Add(media, centros[i]);
@@ -329,4 +329,41 @@ void UnloadKDTree(KDTree* kdtree){
 
         free(kdtree);
     }
+}
+
+bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, KDTree* kdtree){
+    if(kdtree != nullptr && CheckCollisionRayBox(ray, patrimonio.bBox)) {
+
+        RayHitInfo patrimonioHitInfo = GetCollisionRayModel(ray, &patrimonio.model);
+        if (patrimonioHitInfo.hit) {
+            return !existeUmPatrimonioMaisProximo(patrimonio.id, patrimonioHitInfo.distance, ray, kdtree);
+        }
+    }
+    return false;
+}
+
+bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, KDTree* kdtree){
+    if(CheckCollisionRayBox(ray, kdtree->regiao)){
+        //Caso seja um nó folha
+        if(isFolha(kdtree) && kdtree->patrimonio != nullptr){
+            Patrimonio patrimonio = *kdtree->patrimonio;
+            if(patrimonio.id != patrimonioIndex && CheckCollisionRayBox(ray, patrimonio.bBox)){
+                RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
+                if(hitInfo.distance < patrimonioDistance){
+                    return true;
+                }
+            }
+        }
+
+        //TODO: Verificar se o raio está sendo traçado corretamento pela KD-Tree
+        return existeUmPatrimonioMaisProximo(patrimonioIndex, patrimonioDistance, ray, kdtree->menor) ||
+               existeUmPatrimonioMaisProximo(patrimonioIndex, patrimonioDistance, ray, kdtree->maior);
+
+    }
+
+    return false;
+}
+
+bool isFolha(KDTree* kdtree){
+    return kdtree->menor == nullptr && kdtree->maior == nullptr;
 }

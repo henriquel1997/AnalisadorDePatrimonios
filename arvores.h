@@ -10,6 +10,13 @@ enum Eixo {
     X, Y, Z
 };
 
+struct IndexDistance{
+    int index;
+    float distance;
+};
+
+/*--- Octree ---*/
+
 struct Octree{
     Octree* pai;
     Octree* filhos[8];
@@ -18,6 +25,17 @@ struct Octree{
     int numeroPatrimonios;
     Patrimonio* patrimonios;
 };
+
+void UnloadOctree(Octree* octree);
+bool boxContainsBox(BoundingBox fora, BoundingBox dentro);
+Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios);
+bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, Octree *octree);
+bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, Octree *octree);
+int indexPatrimonioMaisProximo(Ray ray, Octree *octree);
+IndexDistance indexDistanceMaisProximo(IndexDistance indexDistance, Ray ray, Octree *octree);
+void desenharOctree(Octree* octree, Color corFilhos, Color corSemFilhos);
+
+/*--- KD-Tree ---*/
 
 struct KDTree{
     KDTree* menor;
@@ -28,18 +46,8 @@ struct KDTree{
     Patrimonio* patrimonio;
 };
 
-struct IndexDistance{
-    int index;
-    float distance;
-};
-
-void UnloadOctree(Octree* octree);
-bool boxContainsBox(BoundingBox fora, BoundingBox dentro);
-Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios);
-bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, Octree *octree);
-bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonioDistance, Ray ray, Octree *octree);
-int indexPatrimonioMaisProximoNaOctree(Ray ray, Octree *octree);
-IndexDistance indexDistanceMaisProximoNaOctree(IndexDistance indexDistance, Ray ray, Octree *octree);
-void desenharOctree(Octree* octree, Color corFilhos, Color corSemFilhos);
 KDTree* BuildKDTree(BoundingBox regiao, std::vector<Patrimonio> patrimonios);
 void UnloadKDTree(KDTree* kdtree);
+bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, KDTree* kdtree);
+bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, KDTree* kdtree);
+bool isFolha(KDTree* kdtree);
