@@ -6,14 +6,26 @@
 #include "raymath.h"
 #include <vector>
 
+enum Eixo {
+    X, Y, Z
+};
+
 struct Octree{
     Octree* pai;
     Octree* filhos[8];
-    //unsigned char filhosAtivos;
     bool filhosAtivos[8];
     BoundingBox regiao;
     int numeroPatrimonios;
     Patrimonio* patrimonios;
+};
+
+struct KDTree{
+    KDTree* menor;
+    KDTree* maior;
+    BoundingBox regiao;
+    Eixo eixo;
+    float valorEixo;
+    Patrimonio* patrimonio;
 };
 
 struct IndexDistance{
@@ -29,3 +41,5 @@ bool existeUmPatrimonioMaisProximoNaOctree(int patrimonioIndex, float patrimonio
 int indexPatrimonioMaisProximoNaOctree(Ray ray, Octree *octree);
 IndexDistance indexDistanceMaisProximoNaOctree(IndexDistance indexDistance, Ray ray, Octree *octree);
 void desenharOctree(Octree* octree, Color corFilhos, Color corSemFilhos);
+KDTree* BuildKDTree(BoundingBox regiao, std::vector<Patrimonio> patrimonios);
+void UnloadKDTree(KDTree* kdtree);

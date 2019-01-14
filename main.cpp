@@ -5,7 +5,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <cstdio>
-#include "octree.h"
+#include "arvores.h"
 
 int screenWidth = 1600;
 int screenHeight = 900;
@@ -39,11 +39,20 @@ time_t tempoInicio;
 Texture2D texturaChao = {};
 Model chaoModel = {};
 
+enum TipoArvore {
+    OCTREE, KDTREE
+};
+
+TipoArvore tipoArvore = OCTREE;
 Octree* octree = nullptr;
+KDTree* kdtree = nullptr;
 bool desenharArvore = false;
 
 void getInput();
+void inicializarArvore();
+void inicializarKDTree();
 void inicializarOctree();
+BoundingBox boundingBoxGrid();
 void carregarModelos(char* path);
 void carregarChao();
 int getModelHitIndex(Ray ray);
@@ -76,7 +85,7 @@ int main() {
     carregarModelos((char *)R"(..\models\centro\)");
     carregarChao();
 
-    inicializarOctree();
+    inicializarArvore();
 
     //--------------------------------------------------------------------------------------
 
@@ -137,6 +146,9 @@ int main() {
     UnloadOctree(octree);
     printf("Octree desalocada\n");
 
+    UnloadKDTree(kdtree);
+    printf("KDTree desalocada\n");
+
     for(auto &patrimonio : patrimonios) {
         UnloadModel(patrimonio.model);
         free(patrimonio.nome);
@@ -151,20 +163,46 @@ int main() {
     return 0;
 }
 
+void inicializarArvore(){
+    switch (tipoArvore){
+        case OCTREE:
+            inicializarOctree();
+            break;
+        case KDTREE:
+            inicializarKDTree();
+            break;
+    }
+}
+
+void inicializarKDTree(){
+    if(kdtree != nullptr){
+        UnloadKDTree(kdtree);
+        printf("KDTree desalocada\n");
+    }
+
+    printf("Comecando a construir a KDTree\n");
+    time_t tempoInicio = time(nullptr);
+    kdtree = BuildKDTree(boundingBoxGrid(), patrimonios);
+    printf("Tempo para gerar a KDTree: %f(s)\n", difftime(time(nullptr), tempoInicio));
+}
+
 void inicializarOctree(){
     if(octree != nullptr){
         UnloadOctree(octree);
         printf("Octree desalocada\n");
     }
 
+    printf("Comecando a construir a Octree\n");
+    time_t tempoInicio = time(nullptr);
+    octree = BuildOctree(boundingBoxGrid(), patrimonios);
+    printf("Tempo para gerar a Octree: %f(s)\n", difftime(time(nullptr), tempoInicio));
+}
+
+BoundingBox boundingBoxGrid(){
     float metade = tamanhoGrid/2;
     Vector3 min = (Vector3){-metade, -metade, -metade};
     Vector3 max = (Vector3){metade, metade, metade};
-
-    printf("Comecando a construir a Octree\n");
-    time_t tempoInicio = time(nullptr);
-    octree = BuildOctree((BoundingBox){min, max}, patrimonios);
-    printf("Tempo para gerar a Octree: %f(s)\n", difftime(time(nullptr), tempoInicio));
+    return (BoundingBox){min, max};
 }
 
 void carregarChao(){
