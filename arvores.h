@@ -52,3 +52,4 @@ bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, KDTree* kdtree);
 bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, KDTree* kdtree);
 int indexPatrimonioMaisProximo(Ray ray, KDTree *kdtree);
 IndexDistance indexDistanceMaisProximo(IndexDistance indexDistance, Ray ray, KDTree *kdtree);
+void desenharKDTree(KDTree *kdtree, Color corFilhos, Color corSemFilhos);

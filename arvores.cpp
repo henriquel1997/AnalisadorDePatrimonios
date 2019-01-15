@@ -395,3 +395,18 @@ IndexDistance indexDistanceMaisProximo(IndexDistance indexDistance, Ray ray, KDT
 
     return indexDistance;
 }
+
+void desenharKDTree(KDTree *kdtree, Color corFilhos, Color corSemFilhos){
+    if(kdtree != nullptr){
+        desenharKDTree(kdtree->menor, corFilhos, corSemFilhos);
+        desenharKDTree(kdtree->maior, corFilhos, corSemFilhos);
+
+        Color cor;
+        if(kdtree->patrimonio == nullptr){
+            cor = corSemFilhos;
+        }else{
+            cor = corFilhos;
+        }
+        DrawBoundingBox(kdtree->regiao, cor);
+    }
+}

@@ -46,7 +46,7 @@ enum TipoArvore {
 TipoArvore tipoArvore = KDTREE;
 Octree* octree = nullptr;
 KDTree* kdtree = nullptr;
-bool desenharArvore = false;
+bool desenhaArvore = false;
 
 void getInput();
 void inicializarArvore();
@@ -62,6 +62,7 @@ void algoritmoVisibilidade();
 void desenharChao();
 void desenharRaios();
 void desenharModelos();
+void desenharArvore();
 void seguirPessoa();
 bool cameraSeguindoPessoa();
 bool estaDentroDeUmPatrimonio();
@@ -126,9 +127,7 @@ int main() {
             //Desenha na textura do chão para representar a visibilidade daquela posição
             desenharChao();
 
-            if(desenharArvore){
-                desenharOctree(octree, GREEN, RED);
-            }
+            desenharArvore();
 
             DrawGrid(numeroQuadrados, tamanhoGrid/numeroQuadrados);
 
@@ -275,6 +274,19 @@ void desenharModelos(){
 
         DrawModel(patrimonios[i].model, centro, 1.f, GRAY);
         DrawModelWires(patrimonios[i].model, centro, 1.f, cor);
+    }
+}
+
+void desenharArvore(){
+    if(desenhaArvore){
+        switch (tipoArvore){
+            case OCTREE:
+                desenharOctree(octree, GREEN, RED);
+                break;
+            case KDTREE:
+                desenharKDTree(kdtree, GREEN, RED);
+                break;
+        }
     }
 }
 
@@ -512,7 +524,7 @@ void getInput(){
     }
 
     if(IsKeyPressed(KEY_T)){
-        desenharArvore = !desenharArvore;
+        desenhaArvore = !desenhaArvore;
     }
 }
 
