@@ -376,18 +376,20 @@ IndexDistance indexDistanceMaisProximo(IndexDistance indexDistance, Ray ray, KDT
             if(patrimonio.id != indexDistance.index && CheckCollisionRayBox(ray, patrimonio.bBox)){
                 RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
                 if(hitInfo.distance < indexDistance.distance){
-                    return (IndexDistance){patrimonio.id, hitInfo.distance};
+                    indexDistance = (IndexDistance){patrimonio.id, hitInfo.distance};
                 }
             }
         }
 
-        //Testa o lado menor para ver se encontra um indexDistance diferente do atual
         IndexDistance indexMenor = indexDistanceMaisProximo(indexDistance, ray, kdtree->menor);
-        if(indexMenor.index != indexDistance.index){
-            return indexMenor;
+        if(indexMenor.distance < indexDistance.distance){
+            indexDistance = indexMenor;
         }
-        //Se não encontrar no menor retorna o que for encontrado no maior
-        return indexDistanceMaisProximo(indexDistance, ray, kdtree->maior);
+
+        IndexDistance indexMaior = indexDistanceMaisProximo(indexDistance, ray, kdtree->maior);
+        if(indexMaior.distance < indexDistance.distance){
+            indexDistance = indexMaior;
+        }
 
     }
 
