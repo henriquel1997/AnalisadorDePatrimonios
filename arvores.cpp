@@ -290,21 +290,20 @@ KDTree* BuildKDTree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
         kdtree->eixo = eixo;
         kdtree->valorEixo = valorEixo;
         kdtree->regiao = regiao;
-        //TODO: Verificar se as regiões estão sendo criadas corretamente
         BoundingBox regiaoMenor = regiao;
         BoundingBox regiaoMaior = regiao;
         switch (eixo){
             case X:
-                regiaoMenor.min.x = valorEixo;
-                regiaoMaior.max.x = valorEixo;
+                regiaoMenor.max.x = valorEixo;
+                regiaoMaior.min.x = valorEixo;
                 break;
             case Y:
-                regiaoMenor.min.y = valorEixo;
-                regiaoMaior.max.y = valorEixo;
+                regiaoMenor.max.y = valorEixo;
+                regiaoMaior.min.y = valorEixo;
                 break;
             case Z:
-                regiaoMenor.min.z = valorEixo;
-                regiaoMaior.max.z = valorEixo;
+                regiaoMenor.max.z = valorEixo;
+                regiaoMaior.min.z = valorEixo;
                 break;
         }
         kdtree->menor = BuildKDTree(regiaoMenor, patrimoniosMenor);
@@ -342,11 +341,10 @@ bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, KDTree* kdtree){
     return false;
 }
 
-//TODO: Não está percorrendo o raio corretamente na KD-Tree
 bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, KDTree* kdtree){
     if(kdtree != nullptr && CheckCollisionRayBox(ray, kdtree->regiao)){
-        //Caso seja um nó folha
-        if(isFolha(kdtree) && kdtree->patrimonio != nullptr){
+        if(kdtree->patrimonio != nullptr){
+            //Se tiver um patrimônio, é um nó folha
             Patrimonio patrimonio = *kdtree->patrimonio;
             if(patrimonio.id != patrimonioIndex && CheckCollisionRayBox(ray, patrimonio.bBox)){
                 RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
@@ -364,6 +362,34 @@ bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance
     return false;
 }
 
-bool isFolha(KDTree* kdtree){
-    return kdtree->menor == nullptr && kdtree->maior == nullptr;
+int indexPatrimonioMaisProximo(Ray ray, KDTree *kdtree){
+
+    IndexDistance indexDistance = {-1, 3.40282347E+38f};
+    return indexDistanceMaisProximo(indexDistance, ray, kdtree).index;
+}
+
+IndexDistance indexDistanceMaisProximo(IndexDistance indexDistance, Ray ray, KDTree *kdtree){
+    if(kdtree != nullptr && CheckCollisionRayBox(ray, kdtree->regiao)){
+        if(kdtree->patrimonio != nullptr){
+            //Se tiver um patrimônio, é um nó folha
+            Patrimonio patrimonio = *kdtree->patrimonio;
+            if(patrimonio.id != indexDistance.index && CheckCollisionRayBox(ray, patrimonio.bBox)){
+                RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
+                if(hitInfo.distance < indexDistance.distance){
+                    return (IndexDistance){patrimonio.id, hitInfo.distance};
+                }
+            }
+        }
+
+        //Testa o lado menor para ver se encontra um indexDistance diferente do atual
+        IndexDistance indexMenor = indexDistanceMaisProximo(indexDistance, ray, kdtree->menor);
+        if(indexMenor.index != indexDistance.index){
+            return indexMenor;
+        }
+        //Se não encontrar no menor retorna o que for encontrado no maior
+        return indexDistanceMaisProximo(indexDistance, ray, kdtree->maior);
+
+    }
+
+    return indexDistance;
 }

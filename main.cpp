@@ -43,7 +43,7 @@ enum TipoArvore {
     OCTREE, KDTREE
 };
 
-TipoArvore tipoArvore = OCTREE;
+TipoArvore tipoArvore = KDTREE;
 Octree* octree = nullptr;
 KDTree* kdtree = nullptr;
 bool desenharArvore = false;
@@ -54,6 +54,7 @@ void inicializarKDTree();
 void inicializarOctree();
 BoundingBox boundingBoxGrid();
 bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray);
+int indexPatrimonioMaisProximo(Ray ray);
 void carregarModelos(char* path);
 void carregarChao();
 int getModelHitIndex(Ray ray);
@@ -212,6 +213,15 @@ bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray){
             return isPatrimonioTheClosestHit(patrimonio, ray, octree);
         case KDTREE:
             return isPatrimonioTheClosestHit(patrimonio, ray, kdtree);
+    }
+}
+
+int indexPatrimonioMaisProximo(Ray ray){
+    switch (tipoArvore){
+        case OCTREE:
+            return indexPatrimonioMaisProximo(ray, octree);
+        case KDTREE:
+            return indexPatrimonioMaisProximo(ray, kdtree);
     }
 }
 
@@ -451,7 +461,7 @@ void getInput(){
 
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
         Ray ray = GetMouseRay(GetMousePosition(), camera);
-        int index = indexPatrimonioMaisProximo(ray, octree);
+        int index = indexPatrimonioMaisProximo(ray);
         if(index >= 0){
             Patrimonio patrimonio = patrimonios.at(index);
             printf("Nome do arquivo do modelo: %s\n", patrimonio.nome);
