@@ -217,7 +217,7 @@ KDTree* BuildKDTree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
         //É um nó folha
         kdtree->regiao = regiao;
         kdtree->patrimonio = (Patrimonio*)malloc(sizeof(Patrimonio));
-        kdtree->patrimonio = &patrimonios[0];
+        *kdtree->patrimonio = patrimonios[0];
         kdtree->menor = nullptr;
         kdtree->maior = nullptr;
 
@@ -342,8 +342,9 @@ bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, KDTree* kdtree){
     return false;
 }
 
+//TODO: Não está percorrendo o raio corretamente na KD-Tree
 bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, KDTree* kdtree){
-    if(CheckCollisionRayBox(ray, kdtree->regiao)){
+    if(kdtree != nullptr && CheckCollisionRayBox(ray, kdtree->regiao)){
         //Caso seja um nó folha
         if(isFolha(kdtree) && kdtree->patrimonio != nullptr){
             Patrimonio patrimonio = *kdtree->patrimonio;
@@ -355,7 +356,6 @@ bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance
             }
         }
 
-        //TODO: Verificar se o raio está sendo traçado corretamento pela KD-Tree
         return existeUmPatrimonioMaisProximo(patrimonioIndex, patrimonioDistance, ray, kdtree->menor) ||
                existeUmPatrimonioMaisProximo(patrimonioIndex, patrimonioDistance, ray, kdtree->maior);
 
