@@ -602,7 +602,7 @@ void carregarModelos(char* path) {
                 auto fullPath = concat(path, nome);
                 Model model = LoadModel(fullPath);
                 BoundingBox bBox = MeshBoundingBox(model.mesh);
-                Patrimonio patrimonio = {id, nome, model, bBox};
+                Patrimonio patrimonio = {id, copy(nome), model, bBox};
                 id++;
                 patrimonios.push_back(patrimonio);
                 free(fullPath);
