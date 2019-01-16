@@ -9,3 +9,10 @@ struct Patrimonio{
     Model model;
     BoundingBox bBox;
 };
+
+struct Triangulo{
+    Vector3 v1;
+    Vector3 v2;
+    Vector3 v3;
+    Patrimonio* patrimonio;
+};

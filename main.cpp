@@ -40,7 +40,7 @@ Texture2D texturaChao = {};
 Model chaoModel = {};
 
 enum TipoArvore {
-    OCTREE, KDTREE
+    OCTREE, KDTREE, KDTREE_TRI
 };
 
 TipoArvore tipoArvore = KDTREE;
@@ -170,6 +170,7 @@ void inicializarArvore(){
             inicializarOctree();
             break;
         case KDTREE:
+        case KDTREE_TRI:
             inicializarKDTree();
             break;
     }
@@ -183,7 +184,11 @@ void inicializarKDTree(){
 
     printf("Comecando a construir a KDTree\n");
     time_t tempoInicio = time(nullptr);
-    kdtree = BuildKDTree(boundingBoxGrid(), patrimonios);
+    if(tipoArvore == KDTREE){
+        kdtree = BuildKDTree(boundingBoxGrid(), patrimonios);
+    }else{
+        kdtree = BuildKDTreeTriangulos(boundingBoxGrid(), patrimonios);
+    }
     printf("Tempo para gerar a KDTree: %f(s)\n", difftime(time(nullptr), tempoInicio));
 }
 
@@ -211,6 +216,7 @@ bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray){
         case OCTREE:
             return isPatrimonioTheClosestHit(patrimonio, ray, octree);
         case KDTREE:
+        case KDTREE_TRI:
             return isPatrimonioTheClosestHit(patrimonio, ray, kdtree);
     }
 }
@@ -220,6 +226,7 @@ int indexPatrimonioMaisProximo(Ray ray){
         case OCTREE:
             return indexPatrimonioMaisProximo(ray, octree);
         case KDTREE:
+        case KDTREE_TRI:
             return indexPatrimonioMaisProximo(ray, kdtree);
     }
 }

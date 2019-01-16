@@ -218,10 +218,11 @@ KDTree* BuildKDTree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
         kdtree->regiao = regiao;
         kdtree->patrimonio = (Patrimonio*)malloc(sizeof(Patrimonio));
         *kdtree->patrimonio = patrimonios[0];
+        kdtree->triangulo = nullptr;
         kdtree->menor = nullptr;
         kdtree->maior = nullptr;
 
-    }else if(!patrimonios.empty()){
+    } else {
         //KD-Tree tem mais de um patrimônio, logo não é um nó folha
         int nPatrimonios = patrimonios.size();
         Vector3 media = {0.f, 0.f, 0.f};
@@ -309,6 +310,157 @@ KDTree* BuildKDTree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
         kdtree->menor = BuildKDTree(regiaoMenor, patrimoniosMenor);
         kdtree->maior = BuildKDTree(regiaoMaior, patrimoniosMaior);
         kdtree->patrimonio = nullptr;
+        kdtree->triangulo = nullptr;
+    }
+
+    return kdtree;
+}
+
+KDTree* BuildKDTreeTriangulos(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
+    std::vector<Triangulo> triangulos;
+    for(auto &patrimonio: patrimonios){
+        auto ponteiro = (Patrimonio*)malloc(sizeof(Patrimonio));
+        *ponteiro = patrimonio;
+        Model* model = &patrimonio.model;
+        //Gambiarra por cause de um bug no Raylib, triangleCount vem sempre zero
+        int nTriangulos = model->mesh.vertexCount/3;
+
+        for(int i = 0; i < nTriangulos; i++){
+            Vector3 a, b, c;
+            auto vertdata = (Vector3 *)model->mesh.vertices;
+
+            if (model->mesh.indices)
+            {
+                a = vertdata[model->mesh.indices[i*3 + 0]];
+                b = vertdata[model->mesh.indices[i*3 + 1]];
+                c = vertdata[model->mesh.indices[i*3 + 2]];
+            }
+            else
+            {
+                a = vertdata[i*3 + 0];
+                b = vertdata[i*3 + 1];
+                c = vertdata[i*3 + 2];
+            }
+
+            a = Vector3Transform(a, model->transform);
+            b = Vector3Transform(b, model->transform);
+            c = Vector3Transform(c, model->transform);
+
+            triangulos.push_back((Triangulo){a, b, c, ponteiro});
+        }
+    }
+
+    return BuildKDTree(regiao, triangulos);
+}
+
+KDTree* BuildKDTree(BoundingBox regiao, std::vector<Triangulo> triangulos){
+
+    if(triangulos.empty()){
+        //KD-Tree não tem triângulos
+        return nullptr;
+    }
+
+    auto kdtree = (KDTree*)malloc(sizeof(KDTree));
+
+    if(triangulos.size() == 1){
+        //É um nó folha
+        kdtree->regiao = regiao;
+        kdtree->triangulo = (Triangulo*)malloc(sizeof(Triangulo));
+        *kdtree->triangulo = triangulos[0];
+        kdtree->patrimonio = nullptr;
+        kdtree->menor = nullptr;
+        kdtree->maior = nullptr;
+
+    } else {
+        //KD-Tree tem mais de um triângulo, logo não é um nó folha
+        int nTriangulos = triangulos.size();
+        Vector3 media = {0.f, 0.f, 0.f};
+        Vector3 centros[nTriangulos];
+
+        //Calcula a média dos centros
+        for (int i = 0; i < nTriangulos; i++) {
+            Triangulo t = triangulos[i];
+            centros[i] = Vector3Divide(Vector3Add(Vector3Add(t.v1, t.v2), t.v3), 3);
+            media = Vector3Add(media, centros[i]);
+        }
+
+        media = Vector3Divide(media, nTriangulos);
+
+        //Calcula a variância dos centros
+        Vector3 variancia = {0.f, 0.f, 0.f};
+        for (auto &centro : centros) {
+            Vector3 sub = Vector3Subtract(centro, media);
+            variancia = Vector3Add(variancia, Vector3MultiplyV(sub, sub));
+        }
+        variancia = Vector3Divide(variancia, nTriangulos-1);
+
+        //Define o eixo de divisão
+        Eixo eixo = X;
+        float valorEixo = media.x;
+        if(variancia.y > variancia.z && variancia.y > variancia.x){
+            eixo = Y;
+            valorEixo = media.y;
+        }else if(variancia.z > variancia.y && variancia.z > variancia.x){
+            eixo = Z;
+            valorEixo = media.z;
+        }
+
+        //Divide os triângulos a partir do eixo
+        std::vector<Triangulo> triangulosMenor;
+        std::vector<Triangulo> triangulosMaior;
+        for(int i = 0; i < nTriangulos; i++){
+            switch(eixo){
+                case X:
+                    if(centros[i].x <= valorEixo){
+                        triangulosMenor.push_back(triangulos[i]);
+                    }
+                    if(centros[i].x >= valorEixo){
+                        triangulosMaior.push_back(triangulos[i]);
+                    }
+                    break;
+                case Y:
+                    if(centros[i].y <= valorEixo){
+                        triangulosMenor.push_back(triangulos[i]);
+                    }
+                    if(centros[i].y >= valorEixo){
+                        triangulosMaior.push_back(triangulos[i]);
+                    }
+                    break;
+                case Z:
+                    if(centros[i].z <= valorEixo){
+                        triangulosMenor.push_back(triangulos[i]);
+                    }
+                    if(centros[i].z >= valorEixo){
+                        triangulosMaior.push_back(triangulos[i]);
+                    }
+                    break;
+            }
+        }
+
+        kdtree->eixo = eixo;
+        kdtree->valorEixo = valorEixo;
+        kdtree->regiao = regiao;
+        //TODO: Acho que o problema da KD-Tree de Triângulos pode ser aqui
+        BoundingBox regiaoMenor = regiao;
+        BoundingBox regiaoMaior = regiao;
+        switch (eixo){
+            case X:
+                regiaoMenor.max.x = valorEixo;
+                regiaoMaior.min.x = valorEixo;
+                break;
+            case Y:
+                regiaoMenor.max.y = valorEixo;
+                regiaoMaior.min.y = valorEixo;
+                break;
+            case Z:
+                regiaoMenor.max.z = valorEixo;
+                regiaoMaior.min.z = valorEixo;
+                break;
+        }
+        kdtree->menor = BuildKDTree(regiaoMenor, triangulosMenor);
+        kdtree->maior = BuildKDTree(regiaoMaior, triangulosMaior);
+        kdtree->patrimonio = nullptr;
+        kdtree->triangulo = nullptr;
     }
 
     return kdtree;
@@ -324,6 +476,10 @@ void UnloadKDTree(KDTree* kdtree){
         }
         if (kdtree->patrimonio != nullptr) {
             free(kdtree->patrimonio);
+        }
+        if (kdtree->triangulo != nullptr) {
+            free(kdtree->triangulo->patrimonio);
+            free(kdtree->triangulo);
         }
 
         free(kdtree);
@@ -343,12 +499,20 @@ bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, KDTree* kdtree){
 
 bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, KDTree* kdtree){
     if(kdtree != nullptr && CheckCollisionRayBox(ray, kdtree->regiao)){
-        if(kdtree->patrimonio != nullptr){
+
+        Triangulo* triangulo = kdtree->triangulo;
+        Patrimonio* patrimonio = kdtree->patrimonio;
+        if(triangulo != nullptr && triangulo->patrimonio->id != patrimonioIndex){
+            //Se tiver um triângulo, é um nó folha
+            auto hitInfo = GetCollisionRayTriangle(ray, triangulo->v1, triangulo->v2, triangulo->v3);
+            if(hitInfo.hit && hitInfo.distance < patrimonioDistance){
+                return true;
+            }
+        }else if(patrimonio != nullptr && patrimonio->id != patrimonioIndex){
             //Se tiver um patrimônio, é um nó folha
-            Patrimonio patrimonio = *kdtree->patrimonio;
-            if(patrimonio.id != patrimonioIndex && CheckCollisionRayBox(ray, patrimonio.bBox)){
-                RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
-                if(hitInfo.distance < patrimonioDistance){
+            if(CheckCollisionRayBox(ray, patrimonio->bBox)){
+                auto hitInfo = GetCollisionRayModel(ray, &patrimonio->model);
+                if(hitInfo.hit && hitInfo.distance < patrimonioDistance){
                     return true;
                 }
             }
@@ -370,13 +534,21 @@ int indexPatrimonioMaisProximo(Ray ray, KDTree *kdtree){
 
 IndexDistance indexDistanceMaisProximo(IndexDistance indexDistance, Ray ray, KDTree *kdtree){
     if(kdtree != nullptr && CheckCollisionRayBox(ray, kdtree->regiao)){
-        if(kdtree->patrimonio != nullptr){
+
+        Triangulo* triangulo = kdtree->triangulo;
+        Patrimonio* patrimonio = kdtree->patrimonio;
+        if(triangulo != nullptr && triangulo->patrimonio->id != indexDistance.index){
+            //Se tiver um triângulo, é um nó folha
+            auto hitInfo = GetCollisionRayTriangle(ray, triangulo->v1, triangulo->v2, triangulo->v3);
+            if(hitInfo.hit && hitInfo.distance < indexDistance.distance){
+                indexDistance = (IndexDistance){triangulo->patrimonio->id, hitInfo.distance};
+            }
+        }else if(patrimonio != nullptr && patrimonio->id != indexDistance.index){
             //Se tiver um patrimônio, é um nó folha
-            Patrimonio patrimonio = *kdtree->patrimonio;
-            if(patrimonio.id != indexDistance.index && CheckCollisionRayBox(ray, patrimonio.bBox)){
-                RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
-                if(hitInfo.distance < indexDistance.distance){
-                    indexDistance = (IndexDistance){patrimonio.id, hitInfo.distance};
+            if(CheckCollisionRayBox(ray, patrimonio->bBox)){
+                auto hitInfo = GetCollisionRayModel(ray, &patrimonio->model);
+                if(hitInfo.hit && hitInfo.distance < indexDistance.distance){
+                    indexDistance = (IndexDistance){patrimonio->id, hitInfo.distance};
                 }
             }
         }

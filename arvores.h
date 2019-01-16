@@ -44,9 +44,12 @@ struct KDTree{
     Eixo eixo;
     float valorEixo;
     Patrimonio* patrimonio;
+    Triangulo* triangulo;
 };
 
 KDTree* BuildKDTree(BoundingBox regiao, std::vector<Patrimonio> patrimonios);
+KDTree* BuildKDTreeTriangulos(BoundingBox regiao, std::vector<Patrimonio> patrimonios);
+KDTree* BuildKDTree(BoundingBox regiao, std::vector<Triangulo> triangulos);
 void UnloadKDTree(KDTree* kdtree);
 bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray, KDTree* kdtree);
 bool existeUmPatrimonioMaisProximo(int patrimonioIndex, float patrimonioDistance, Ray ray, KDTree* kdtree);
