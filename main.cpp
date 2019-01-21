@@ -5,7 +5,9 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <cstdio>
+#include <cstring>
 #include "arvores.h"
+#include "model_loading.h"
 
 int screenWidth = 1600;
 int screenHeight = 900;
@@ -85,7 +87,13 @@ int main() {
     camera.fovy = 45.0f;                                // Camera field-of-view Y
     camera.type = CAMERA_PERSPECTIVE;                   // Camera mode type
 
-    carregarModelos((char *)R"(..\models\centro\)");
+    //carregarModelos((char *)R"(..\models\centro\)");
+    bool test = importarModelo((char *)R"(../models/teapot.fbx)");
+    if(test){
+        printf("Modelo importado\n");
+    }else{
+        printf("Modelo nao importado\n");
+    }
     carregarChao();
 
     inicializarArvore();
@@ -464,7 +472,7 @@ void getInput(){
     if(IsKeyDown(KEY_LEFT_SHIFT) || shiftPressed){
 
         if(shiftPressed){
-            SetMousePosition((Vector2){screenWidth*.5f, screenHeight*.5f});
+            SetMousePosition(screenWidth/2, screenHeight/2);
         }
 
         Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
@@ -576,7 +584,7 @@ bool estaDentroDeUmPatrimonio(){
 bool hasEndingString(char* const &fullString, char* const &ending) {
     if (strlen(fullString) >= strlen(ending)) {
 
-        int pos = strlen(fullString) - strlen(ending);
+        size_t pos = strlen(fullString) - strlen(ending);
         bool igual = true;
         for(int i = 0;  i < strlen(ending); i++){
             if(fullString[i + pos] != ending[i]){
