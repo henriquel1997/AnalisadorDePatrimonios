@@ -78,12 +78,13 @@ int main() {
 
     // Define the camera to look into our 3d world
     camera.position = (Vector3){ 7.0f, 7.0f, 7.0f };    // Camera position
+    //camera.position = (Vector3){ 500.0f, 500.0f, 500.0f };    // Camera position
     camera.target = defaultTarget;                      // Camera looking at point
     camera.up = up;                                     // Camera up vector (rotation towards target)
     camera.fovy = 45.0f;                                // Camera field-of-view Y
     camera.type = CAMERA_PERSPECTIVE;                   // Camera mode type
 
-    patrimonios = importarModelo((char *)R"(../models/teapot.fbx)");
+    patrimonios = importarModelo((char *)R"(../models/centro.blend)");
     if(!patrimonios.empty()){
         printf("Modelo importado\n");
     }else{

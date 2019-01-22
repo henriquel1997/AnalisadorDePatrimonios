@@ -12,4 +12,6 @@
 #include <rlgl.h>
 
 std::vector<Patrimonio> importarModelo(const char * pFile);
-Patrimonio PatrimonioFromMesh(int id, aiMesh* mesh);
+Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, aiMesh* mesh);
+std::vector<Patrimonio> PatrimonioFromNode(int initialID, const aiScene* scene, aiMatrix4x4 parentTransform, aiNode* node);
+aiVector3D multiplyByMatrix(aiVector3D vec, aiMatrix4x4 mat);
