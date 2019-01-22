@@ -440,7 +440,6 @@ KDTree* BuildKDTree(BoundingBox regiao, std::vector<Triangulo> triangulos){
         kdtree->eixo = eixo;
         kdtree->valorEixo = valorEixo;
         kdtree->regiao = regiao;
-        //TODO: Acho que o problema da KD-Tree de Triângulos pode ser aqui
         BoundingBox regiaoMenor = regiao;
         BoundingBox regiaoMaior = regiao;
         switch (eixo){

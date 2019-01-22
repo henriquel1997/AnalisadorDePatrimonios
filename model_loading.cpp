@@ -20,6 +20,13 @@ std::vector<Patrimonio> importarModelo(const char * pFile){
         return patrimonios;
     }
 
+//    aiMatrix4x4 transform = aiMatrix4x4(
+//            1.f, 0.f, 0.f, 0.f,
+//            0.f, 0.f, 1.f, 0.f,
+//            0.f, -1.f, 0.f, 0.f,
+//            0.f, 0.f, 0.f, 1.f
+//    );
+
     aiMatrix4x4 identity;
 
     return PatrimonioFromNode(0, scene, identity, scene->mRootNode);
@@ -59,11 +66,7 @@ Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, a
     int nFaces = mesh->mNumFaces;
     model.mesh.triangleCount = nFaces;
     model.mesh.vertexCount = nFaces * 3;
-    Matrix matrix = {transform.a1, transform.a2, transform.a3, transform.a4,
-                     transform.b1, transform.b2, transform.b3, transform.b4,
-                     transform.c1, transform.c2, transform.c3, transform.c4,
-                     transform.d1, transform.d2, transform.d3, transform.d4};
-    //Matrix matrix = MatrixIdentity();
+    Matrix matrix = MatrixIdentity();
     model.transform = matrix;
     model.material = LoadMaterialDefault();
 
@@ -85,14 +88,11 @@ Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, a
 
             aiFace face = mesh->mFaces[i];
 
-            aiVector3D vertex;
-
             for(int j = 0; j < 3; j++){
-                vertex = mesh->mVertices[face.mIndices[j]];
-                //vertex = multiplyByMatrix(vertex, transform);
+                auto vertex = multiplyByMatrix(mesh->mVertices[face.mIndices[j]], transform);
                 vertices[vCounter + 0] = vertex.x;
-                vertices[vCounter + 1] = vertex.y;
-                vertices[vCounter + 2] = vertex.z;
+                vertices[vCounter + 1] = vertex.z;
+                vertices[vCounter + 2] = -vertex.y;
                 vCounter += 3;
             }
         }
@@ -112,18 +112,12 @@ Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, a
 
 aiVector3D multiplyByMatrix(aiVector3D vec, aiMatrix4x4 mat){
     aiVector3D result;
-    aiVector3D scaling;
-    aiVector3D rotation;
-    aiVector3D position;
-    mat.Decompose(scaling, rotation, position);
-    result = scaling * rotation * position;
-//    float w = 1;
-//    result.x = mat.a1*vec.x + mat.b1*vec.y + mat.c1*vec.z + mat.d1*w;
-//    result.y = mat.a2*vec.x + mat.b2*vec.y + mat.c2*vec.z + mat.d2*w;
-//    result.z = mat.a3*vec.x + mat.b3*vec.y + mat.c3*vec.z + mat.d3*w;
-//    float resultW = mat.a4*vec.x + mat.b4*vec.y + mat.c4*vec.z + mat.d4*w;
-//    result.x /= resultW;
-//    result.y /= resultW;
-//    result.z /= resultW;
+    result.x = mat.a1*vec.x + mat.a2*vec.y + mat.a3*vec.z + mat.a4;
+    result.y = mat.b1*vec.x + mat.b2*vec.y + mat.b3*vec.z + mat.b4;
+    result.z = mat.c1*vec.x + mat.c2*vec.y + mat.c3*vec.z + mat.c4;
+    float resultW = mat.d1*vec.x + mat.d2*vec.y + mat.d3*vec.z + mat.d4;
+    result.x /= resultW;
+    result.y /= resultW;
+    result.z /= resultW;
     return result;
 }

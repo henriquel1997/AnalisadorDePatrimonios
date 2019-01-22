@@ -466,11 +466,6 @@ void getInput(){
     //Controla a direção (target) pelo mouse quando o shift esquerdo estiver pressionado
     bool shiftPressed = IsKeyPressed(KEY_LEFT_SHIFT);
     if(IsKeyDown(KEY_LEFT_SHIFT) || shiftPressed){
-
-        if(shiftPressed){
-            SetMousePosition(screenWidth/2, screenHeight/2);
-        }
-
         Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
 
         if(shiftPressed){
