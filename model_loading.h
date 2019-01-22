@@ -2,8 +2,14 @@
 // Created by henrique on 21/01/19.
 //
 
-#include <assimp/Importer.hpp>      // C++ importer interface
-#include <assimp/scene.h>           // Output data structure
-#include <assimp/postprocess.h>     // Post processing flags
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <vector>
+#include "string.h"
+#include "arvores.h"
+#include "raylib.h"
+#include <rlgl.h>
 
-bool importarModelo(const char * pFile);
+std::vector<Patrimonio> importarModelo(const char * pFile);
+Patrimonio PatrimonioFromMesh(int id, aiMesh* mesh);

@@ -29,7 +29,7 @@ if (NOT raylib_FOUND) # If there's none, fetch and build raylib
 endif()
 
 # This is the main part:
-add_executable(${PROJECT_NAME} main.cpp structs.h arvores.cpp arvores.h model_loading.cpp model_loading.h)
+add_executable(${PROJECT_NAME} main.cpp structs.h arvores.cpp arvores.h model_loading.cpp model_loading.h string.cpp string.h)
 #set(raylib_VERBOSE 1)
 target_link_libraries(${PROJECT_NAME} raylib)
 target_link_libraries(${PROJECT_NAME} assimp)

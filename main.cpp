@@ -1,12 +1,8 @@
 #include <vector>
 #include <time.h>
-#include "dirent.h"
 #include "math.h"
 #include "raylib.h"
 #include "raymath.h"
-#include <cstdio>
-#include <cstring>
-#include "arvores.h"
 #include "model_loading.h"
 
 int screenWidth = 1600;
@@ -87,9 +83,8 @@ int main() {
     camera.fovy = 45.0f;                                // Camera field-of-view Y
     camera.type = CAMERA_PERSPECTIVE;                   // Camera mode type
 
-    //carregarModelos((char *)R"(..\models\centro\)");
-    bool test = importarModelo((char *)R"(../models/teapot.fbx)");
-    if(test){
+    patrimonios = importarModelo((char *)R"(../models/teapot.fbx)");
+    if(!patrimonios.empty()){
         printf("Modelo importado\n");
     }else{
         printf("Modelo nao importado\n");
@@ -579,68 +574,6 @@ bool estaDentroDeUmPatrimonio(){
     raio.direction = Vector3Negate(up);
 
     return getModelHitIndex(raio) >= 0;
-}
-
-bool hasEndingString(char* const &fullString, char* const &ending) {
-    if (strlen(fullString) >= strlen(ending)) {
-
-        size_t pos = strlen(fullString) - strlen(ending);
-        bool igual = true;
-        for(int i = 0;  i < strlen(ending); i++){
-            if(fullString[i + pos] != ending[i]){
-                igual = false;
-                break;
-            }
-        }
-
-        return igual;
-    } else {
-        return false;
-    }
-}
-
-char* concat(char* dest, char* source){
-    int destSize = sizeof(dest) * strlen(dest);
-    int sourceSize = sizeof(source) * strlen(source);
-    auto buffer = (char*)malloc(static_cast<size_t>(destSize + sourceSize));
-    sprintf(buffer, "%s%s", dest, source);
-    return buffer;
-}
-
-char* copy(char* str){
-    auto buffer = (char*)malloc(static_cast<size_t>(sizeof(str) * strlen(str)));
-    sprintf(buffer, "%s", str);
-    return buffer;
-}
-
-void carregarModelos(char* path) {
-
-    DIR *dir = opendir(path);
-    struct dirent *ent;
-
-    if (dir != nullptr) {
-        // Lista todos os arquivos do diretório
-
-        int id = 0;
-        while ((ent = readdir(dir)) != nullptr) {
-            char* nome = ent->d_name;
-            if(hasEndingString(nome, (char*)".obj")){
-                //É um arquivo .obj
-                auto fullPath = concat(path, nome);
-                Model model = LoadModel(fullPath);
-                BoundingBox bBox = MeshBoundingBox(model.mesh);
-                Patrimonio patrimonio = {id, copy(nome), model, bBox};
-                id++;
-                patrimonios.push_back(patrimonio);
-                free(fullPath);
-            }
-        }
-        closedir(dir);
-
-        printf("Modelos carregados com sucesso.\n");
-    }else{
-        printf("Nao foi possivel abrir o caminho.\n");
-    }
 }
 
 void initRand(){
