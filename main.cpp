@@ -50,10 +50,12 @@ void getInput();
 void inicializarArvore();
 void inicializarKDTree();
 void inicializarOctree();
+void unloadArvore();
 BoundingBox boundingBoxGrid();
 bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray);
 int indexPatrimonioMaisProximo(Ray ray);
 void carregarChao();
+Patrimonio getPatrimonio(int id);
 int getModelHitIndex(Ray ray);
 void algoritmoVisibilidade();
 void desenharChao();
@@ -83,12 +85,13 @@ int main() {
     camera.fovy = 45.0f;                                // Camera field-of-view Y
     camera.type = CAMERA_PERSPECTIVE;                   // Camera mode type
 
-    patrimonios = importarModelo((char *)R"(../models/centro.blend)");
+    patrimonios = importarModelo((char *)R"(../models/CentroFortaleza.fbx)", boundingBoxGrid());
     if(!patrimonios.empty()){
         printf("Modelo importado\n");
     }else{
         printf("Modelo nao importado\n");
     }
+
     carregarChao();
 
     inicializarArvore();
@@ -147,11 +150,7 @@ int main() {
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadOctree(octree);
-    printf("Octree desalocada\n");
-
-    UnloadKDTree(kdtree);
-    printf("KDTree desalocada\n");
+    unloadArvore();
 
     for(auto &patrimonio : patrimonios) {
         UnloadModel(patrimonio.model);
@@ -182,6 +181,7 @@ void inicializarArvore(){
 void inicializarKDTree(){
     if(kdtree != nullptr){
         UnloadKDTree(kdtree);
+        kdtree = nullptr;
         printf("KDTree desalocada\n");
     }
 
@@ -198,6 +198,7 @@ void inicializarKDTree(){
 void inicializarOctree(){
     if(octree != nullptr){
         UnloadOctree(octree);
+        kdtree = nullptr;
         printf("Octree desalocada\n");
     }
 
@@ -205,6 +206,22 @@ void inicializarOctree(){
     time_t tempoInicio = time(nullptr);
     octree = BuildOctree(boundingBoxGrid(), patrimonios);
     printf("Tempo para gerar a Octree: %f(s)\n", difftime(time(nullptr), tempoInicio));
+}
+
+void unloadArvore(){
+    switch (tipoArvore){
+        case OCTREE:
+            UnloadOctree(octree);
+            octree = nullptr;
+            printf("Octree desalocada\n");
+            break;
+        case KDTREE:
+        case KDTREE_TRI:
+            UnloadKDTree(kdtree);
+            kdtree = nullptr;
+            printf("KDTree desalocada\n");
+            break;
+    }
 }
 
 BoundingBox boundingBoxGrid(){
@@ -275,15 +292,18 @@ void desenharRaios(){
 
 void desenharModelos(){
     for (int i = 0; i < patrimonios.size(); i++){
+
+        Patrimonio patrimonio = patrimonios[i];
+
         Color cor;
-        if(patrimonioIndex == i){
+        if(patrimonioIndex == patrimonio.id){
             cor = RED;
         }else{
             cor = BLACK;
         }
 
-        DrawModel(patrimonios[i].model, centro, 1.f, GRAY);
-        DrawModelWires(patrimonios[i].model, centro, 1.f, cor);
+        DrawModel(patrimonio.model, centro, 1.f, GRAY);
+        DrawModelWires(patrimonio.model, centro, 1.f, cor);
     }
 }
 
@@ -313,7 +333,7 @@ void algoritmoVisibilidade(){
         float metadeGrid = tamanhoGrid/2;
         float metadeQuadrado = tamanhoQuadrado/2;
         int numeroQuadradosTotal = numeroQuadrados*numeroQuadrados;
-        Patrimonio patrimonio = patrimonios[patrimonioIndex];
+        Patrimonio patrimonio = getPatrimonio(patrimonioIndex);
 
         if(passoAlgoritmo == 0){
             pontosVisiveisChao.clear();
@@ -480,18 +500,29 @@ void getInput(){
         Ray ray = GetMouseRay(GetMousePosition(), camera);
         int index = indexPatrimonioMaisProximo(ray);
         if(index >= 0){
-            Patrimonio patrimonio = patrimonios.at(index);
-            printf("Nome do arquivo do modelo: %s\n", patrimonio.nome);
-            printf("Index: %i\n", index);
-            patrimonioIndex = index;
-            float* vertices = patrimonio.model.mesh.vertices;
-            pontosPatrimonio.clear();
-            for(int i = 0; i < patrimonio.model.mesh.vertexCount; i += 3){
-                float x = vertices[i];
-                float y = vertices[i+1];
-                float z = vertices[i+2];
-                pontosPatrimonio.push_back((Vector3){x, y, z});
-                printf("Ponto Patrimonio: %i: %f, %f, %f\n", (i/3)+1, x, y, z);
+            Patrimonio patrimonio;
+            bool achou = false;
+            for(auto p : patrimonios){
+                if(p.id == index){
+                    achou = true;
+                    patrimonio = p;
+                }
+            }
+            if(achou){
+                printf("Nome do arquivo do modelo: %s\n", patrimonio.nome);
+                printf("Index: %i\n", index);
+                patrimonioIndex = index;
+                float* vertices = patrimonio.model.mesh.vertices;
+                pontosPatrimonio.clear();
+                for(int i = 0; i < patrimonio.model.mesh.vertexCount; i += 3){
+                    float x = vertices[i];
+                    float y = vertices[i+1];
+                    float z = vertices[i+2];
+                    pontosPatrimonio.push_back((Vector3){x, y, z});
+                    if(patrimonio.model.mesh.vertexCount < 50){
+                        printf("Ponto Patrimonio: %i: %f, %f, %f\n", (i/3)+1, x, y, z);
+                    }
+                }
             }
         }else{
             printf("Nao atingiu um modelo");
@@ -531,17 +562,41 @@ void getInput(){
     if(IsKeyPressed(KEY_T)){
         desenhaArvore = !desenhaArvore;
     }
+
+    if(IsKeyPressed(KEY_DELETE)){
+        if(patrimonioIndex != -1){
+            for(int i = 0; i < patrimonios.size(); i++){
+                if(patrimonios[i].id == patrimonioIndex){
+                    patrimonios.erase(patrimonios.begin() + i);
+                    patrimonioIndex = -1;
+                    inicializarArvore();
+                    break;
+                }
+            }
+        }
+    }
+}
+
+Patrimonio getPatrimonio(int id){
+    if(id > -1){
+        for(int i = 0; i < patrimonios.size(); i++){
+            if(patrimonios[i].id == patrimonioIndex){
+                return patrimonios[i];
+            }
+        }
+    }
 }
 
 int getModelHitIndex(Ray ray){
     float lowestDistance = -1.f;
     int modelHitIndex = -1;
-    for(int i = 0; i < patrimonios.size(); i++){
-        Model modelo = patrimonios.at(i).model;
-        RayHitInfo hitInfo = GetCollisionRayModel(ray, &modelo);
-        if(hitInfo.hit && (hitInfo.distance < lowestDistance || lowestDistance < 0)){
-            lowestDistance = hitInfo.distance;
-            modelHitIndex = i;
+    for (auto patrimonio : patrimonios) {
+        if(CheckCollisionRayBox(ray, patrimonio.bBox)){
+            RayHitInfo hitInfo = GetCollisionRayModel(ray, &patrimonio.model);
+            if(hitInfo.hit && (hitInfo.distance < lowestDistance || lowestDistance < 0)){
+                lowestDistance = hitInfo.distance;
+                modelHitIndex = patrimonio.id;
+            }
         }
     }
     return modelHitIndex;
