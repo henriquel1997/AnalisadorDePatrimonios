@@ -25,7 +25,7 @@ std::vector<Patrimonio> importarModelo(const char * pFile, BoundingBox boundingB
     return patrimonios;
 }
 
-std::vector<Patrimonio> PatrimonioFromNode(int initialID, const aiScene* scene, aiMatrix4x4 parentTransform, aiMatrix4x4 scaleMatrix, aiNode* node){
+std::vector<Patrimonio> PatrimonioFromNode(int initialID, const aiScene* scene, aiMatrix4x4 parentTransform, Matrix modelTransform, aiNode* node){
 
     std::vector<Patrimonio> patrimonios;
 
@@ -39,25 +39,24 @@ std::vector<Patrimonio> PatrimonioFromNode(int initialID, const aiScene* scene, 
         printf(node->mName.C_Str());
         printf("\n");
 
-        patrimonios.push_back(PatrimonioFromMesh(initialID + (int)patrimonios.size(), node->mName.C_Str(), transform, scaleMatrix, mesh));
+        patrimonios.push_back(PatrimonioFromMesh(initialID + (int)patrimonios.size(), node->mName.C_Str(), transform, modelTransform, mesh));
     }
 
     for(int i = 0; i < node->mNumChildren; i++){
-        auto childVector = PatrimonioFromNode(initialID + (int)patrimonios.size(), scene, transform,  scaleMatrix, node->mChildren[i]);
+        auto childVector = PatrimonioFromNode(initialID + (int)patrimonios.size(), scene, transform,  modelTransform, node->mChildren[i]);
         patrimonios.insert( patrimonios.end(), childVector.begin(), childVector.end() );
     }
 
     return patrimonios;
 }
 
-Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, aiMatrix4x4 scaleMatrix, aiMesh* mesh){
+Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, Matrix modelTransform, aiMesh* mesh){
 
     Model model;
     int nFaces = mesh->mNumFaces;
     model.mesh.triangleCount = nFaces;
     model.mesh.vertexCount = nFaces * 3;
-    Matrix matrix = MatrixIdentity();
-    model.transform = matrix;
+    model.transform = modelTransform;
     model.material = LoadMaterialDefault();
 
     model.mesh.normals = NULL;
@@ -80,10 +79,10 @@ Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, a
 
             for(int j = 0; j < 3; j++){
                 auto vertex = multiplyByMatrix(mesh->mVertices[face.mIndices[j]], transform);
-                vertex = multiplyByMatrix(vertex, scaleMatrix);
                 vertices[vCounter + 0] = vertex.x;
                 vertices[vCounter + 1] = vertex.y;
                 vertices[vCounter + 2] = vertex.z;
+
                 vCounter += 3;
             }
         }
@@ -96,7 +95,10 @@ Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, a
     patrimonio.id = id;
     patrimonio.nome = copy((char*)nome);
     patrimonio.model = model;
-    patrimonio.bBox = MeshBoundingBox(model.mesh);
+    auto bBox = MeshBoundingBox(patrimonio.model.mesh);
+    bBox.min = Vector3Transform(bBox.min, modelTransform);
+    bBox.max = Vector3Transform(bBox.max, modelTransform);
+    patrimonio.bBox = bBox;
 
     return patrimonio;
 }
@@ -113,7 +115,7 @@ aiVector3D multiplyByMatrix(aiVector3D vec, aiMatrix4x4 mat){
     return result;
 }
 
-aiMatrix4x4 getScaleMatrix(BoundingBox boundingBox, const aiScene* scene){
+Matrix getScaleMatrix(BoundingBox boundingBox, const aiScene* scene){
     Vector3 maior = {};
     Vector3 menor = {};
     for(int i = 0; i < scene->mNumMeshes; i++){
@@ -148,7 +150,7 @@ aiMatrix4x4 getScaleMatrix(BoundingBox boundingBox, const aiScene* scene){
 
     float scaleFactor = Vector3Length(difBound)/Vector3Length(difAtual);
 
-    return aiMatrix4x4{
+    return (Matrix){
             scaleFactor, 0.f, 0.f, 0.f,
             0.f, scaleFactor, 0.f, 0.f,
             0.f, 0.f, scaleFactor, 0.f,

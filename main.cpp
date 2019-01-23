@@ -45,6 +45,7 @@ TipoArvore tipoArvore = KDTREE;
 Octree* octree = nullptr;
 KDTree* kdtree = nullptr;
 bool desenhaArvore = false;
+bool mostrarBoundingBox = false;
 
 void getInput();
 void inicializarArvore();
@@ -291,10 +292,7 @@ void desenharRaios(){
 }
 
 void desenharModelos(){
-    for (int i = 0; i < patrimonios.size(); i++){
-
-        Patrimonio patrimonio = patrimonios[i];
-
+    for (auto patrimonio : patrimonios) {
         Color cor;
         if(patrimonioIndex == patrimonio.id){
             cor = RED;
@@ -302,6 +300,9 @@ void desenharModelos(){
             cor = BLACK;
         }
 
+        if(mostrarBoundingBox){
+            DrawBoundingBox(patrimonio.bBox, GREEN);
+        }
         DrawModel(patrimonio.model, centro, 1.f, GRAY);
         DrawModelWires(patrimonio.model, centro, 1.f, cor);
     }
@@ -518,9 +519,10 @@ void getInput(){
                     float x = vertices[i];
                     float y = vertices[i+1];
                     float z = vertices[i+2];
-                    pontosPatrimonio.push_back((Vector3){x, y, z});
+                    Vector3 vertex = Vector3Transform((Vector3){x, y, z}, patrimonio.model.transform);
+                    pontosPatrimonio.push_back(vertex);
                     if(patrimonio.model.mesh.vertexCount < 50){
-                        printf("Ponto Patrimonio: %i: %f, %f, %f\n", (i/3)+1, x, y, z);
+                        printf("Ponto Patrimonio: %i: %f, %f, %f\n", (i/3)+1, vertex.x, vertex.y, vertex.z);
                     }
                 }
             }
@@ -574,6 +576,10 @@ void getInput(){
                 }
             }
         }
+    }
+
+    if(IsKeyPressed(KEY_B)){
+        mostrarBoundingBox = !mostrarBoundingBox;
     }
 }
 

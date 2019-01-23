@@ -88,7 +88,7 @@ Octree* BuildOctree(BoundingBox regiao, std::vector<Patrimonio> patrimonios){
         }
     }
 
-    octree->numeroPatrimonios = patrimonios.size();
+    octree->numeroPatrimonios = (int)patrimonios.size();
     octree->patrimonios = (Patrimonio*)malloc(sizeof(Patrimonio)*patrimonios.size());
     for(int i = 0; i < patrimonios.size(); i++){
         octree->patrimonios[i] = patrimonios[i];
