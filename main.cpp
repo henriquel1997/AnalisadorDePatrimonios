@@ -53,7 +53,6 @@ void inicializarOctree();
 BoundingBox boundingBoxGrid();
 bool isPatrimonioTheClosestHit(Patrimonio patrimonio, Ray ray);
 int indexPatrimonioMaisProximo(Ray ray);
-void carregarModelos(char* path);
 void carregarChao();
 int getModelHitIndex(Ray ray);
 void algoritmoVisibilidade();

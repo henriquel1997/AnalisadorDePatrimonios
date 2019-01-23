@@ -10,22 +10,14 @@ std::vector<Patrimonio> importarModelo(const char * pFile){
 
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile( pFile,
-                                              aiProcess_CalcTangentSpace       |
+                                              aiProcess_FlipWindingOrder       |
                                               aiProcess_Triangulate            |
                                               aiProcess_JoinIdenticalVertices  |
                                               aiProcess_SortByPType);
-
     if(!scene){
         printf(importer.GetErrorString());
         return patrimonios;
     }
-
-//    aiMatrix4x4 transform = aiMatrix4x4(
-//            1.f, 0.f, 0.f, 0.f,
-//            0.f, 0.f, 1.f, 0.f,
-//            0.f, -1.f, 0.f, 0.f,
-//            0.f, 0.f, 0.f, 1.f
-//    );
 
     aiMatrix4x4 identity;
 
@@ -37,23 +29,20 @@ std::vector<Patrimonio> PatrimonioFromNode(int initialID, const aiScene* scene, 
     std::vector<Patrimonio> patrimonios;
 
     aiMatrix4x4 transform = node->mTransformation * parentTransform;
+    for(int i = 0; i < node->mNumMeshes; i++){
 
-    int cont = initialID;
-    while(cont < node->mNumMeshes){
-
-        int meshIndex = node->mMeshes[cont];
+        int meshIndex = node->mMeshes[i];
         aiMesh* mesh = scene->mMeshes[meshIndex];
 
-        printf("Nome modelo[%d]: ", cont);
+        printf("Nome modelo[%d]: ", i);
         printf(node->mName.C_Str());
         printf("\n");
 
-        patrimonios.push_back(PatrimonioFromMesh(cont, node->mName.C_Str(), transform, mesh));
-        cont++;
+        patrimonios.push_back(PatrimonioFromMesh(initialID + (int)patrimonios.size(), node->mName.C_Str(), transform, mesh));
     }
 
     for(int i = 0; i < node->mNumChildren; i++){
-        auto childVector = PatrimonioFromNode(cont, scene, transform, node->mChildren[i]);
+        auto childVector = PatrimonioFromNode(initialID + (int)patrimonios.size(), scene, transform, node->mChildren[i]);
         patrimonios.insert( patrimonios.end(), childVector.begin(), childVector.end() );
     }
 
@@ -92,7 +81,7 @@ Patrimonio PatrimonioFromMesh(int id, const char* nome, aiMatrix4x4 transform, a
                 auto vertex = multiplyByMatrix(mesh->mVertices[face.mIndices[j]], transform);
                 vertices[vCounter + 0] = vertex.x;
                 vertices[vCounter + 1] = vertex.z;
-                vertices[vCounter + 2] = -vertex.y;
+                vertices[vCounter + 2] = - vertex.y;
                 vCounter += 3;
             }
         }
